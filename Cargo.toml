@@ -3,7 +3,15 @@ name = "substrate-api-explorer"
 version = "0.1.0"
 authors = ["Ales Tsurko <ales.tsurko@gmail.com>"]
 edition = "2021"
+description = ""
 
+[package.metadata.bundle]
+name = "SubAPIxplr"
+identifier = "by.alestsurko.substrate-api-explorer"
+icon = ["32x32.png", "128x128.png", "128x128@2x.png"]
+resources = ["assets"]
+version = "0.1.0"
+category = "Developer Tool"
 
 [dependencies]
 egui = "0.22.0"
