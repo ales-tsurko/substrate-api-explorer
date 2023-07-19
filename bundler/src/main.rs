@@ -1,6 +1,6 @@
 use tauri_bundler::bundle::{
     bundle_project, BundleBinary, BundleSettings, PackageSettings, PackageType, Settings,
-    SettingsBuilder,
+    SettingsBuilder, WindowsSettings,
 };
 
 static OUT_DIR: &str = "target/release/";
@@ -19,6 +19,9 @@ fn settings() -> Settings {
         default_run: None,
     };
 
+    let mut windows = WindowsSettings::default();
+    windows.icon_path = "assets/128x128.ico".into();
+
     let mut bundle_set = BundleSettings::default();
     bundle_set.identifier = Some("by.alestsurko.substrate-api-explorer".to_string());
     bundle_set.icon = Some(vec![
@@ -27,6 +30,7 @@ fn settings() -> Settings {
         "assets/128x128@2x.png".to_string(),
     ]);
     bundle_set.resources = Some(vec!["assets".to_string()]);
+    bundle_set.windows = windows;
 
     use PackageType::*;
 
@@ -34,6 +38,7 @@ fn settings() -> Settings {
         .package_settings(package)
         .project_out_directory(OUT_DIR)
         .package_types(vec![MacOsBundle, WindowsMsi, Deb])
+        .bundle_settings(bundle_set)
         .binaries(vec![BundleBinary::new(
             "substrate_api_explorer".to_string(),
             true,
