@@ -4216,7 +4216,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
 
 [[package]]
-name = "substrate-api-explorer"
+name = "substrate-bip39"
+version = "0.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "49eee6965196b32f882dd2ee85a92b1dbead41b04e53907f269de3b0dc04733c"
+dependencies = [
+ "hmac 0.11.0",
+ "pbkdf2 0.8.0",
+ "schnorrkel",
+ "sha2 0.9.9",
+ "zeroize",
+]
+
+[[package]]
+name = "substrate_api_explorer"
 version = "0.1.0"
 dependencies = [
  "eframe",
@@ -4230,19 +4243,6 @@ dependencies = [
  "tokio",
  "url",
  "wasm-bindgen-futures",
-]
-
-[[package]]
-name = "substrate-bip39"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49eee6965196b32f882dd2ee85a92b1dbead41b04e53907f269de3b0dc04733c"
-dependencies = [
- "hmac 0.11.0",
- "pbkdf2 0.8.0",
- "schnorrkel",
- "sha2 0.9.9",
- "zeroize",
 ]
 
 [[package]]

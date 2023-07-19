@@ -33,6 +33,7 @@ impl Default for ApiExplorer {
     fn default() -> Self {
         let (sender, mut receiver): (UnboundedSender<String>, UnboundedReceiver<String>) =
             mpsc::unbounded_channel();
+        #[allow(clippy::type_complexity)]
         let (sender2, receiver2): (
             UnboundedSender<Result<Metadata, String>>,
             UnboundedReceiver<Result<Metadata, String>>,

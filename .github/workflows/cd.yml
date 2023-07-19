@@ -1,0 +1,108 @@
+name: CD
+
+on:
+  push:
+    tags:
+    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+  package_macos:
+    name: Package macOS
+    runs-on: macos-latest
+        
+    steps:
+      - uses: actions/checkout@v2
+      - name: Package
+        run: |
+          cargo install cargo-bundle
+          cargo bundle --release
+          cd target/release/bundle/osx/
+          zip -r subapixplr.zip SubAPIxplr.app
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: macos-package
+          path: target/release/bundle/oxs/subapixplr.zip
+
+  package_win:
+    name: Package Windows
+    runs-on: windows-latest
+        
+    steps:
+      - uses: actions/checkout@v2
+      - name: Package
+        run: |
+          cargo install cargo-bundle
+          cargo bundle --release
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: win-package
+          path: target/release/bundle/msi/SubAPIxplr.msi
+
+  package_deb:
+    name: Package Debian
+    runs-on: ubuntu-latest
+        
+    steps:
+      - uses: actions/checkout@v2
+      - name: Package
+        run: |
+          cargo install cargo-bundle
+          cargo bundle --release
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: deb-package
+          path: target/release/bundle/deb/substrate_api_explorer_*.deb
+
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [package_macos, package_win, package_deb]
+
+    steps:
+      - name: Create Release
+        id: cr
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download macOS package
+        uses: actions/download-artifact@v1
+        with:
+          name: macos-package
+
+      - name: Download Windows package
+        uses: actions/download-artifact@v1
+        with:
+          name: win-package
+
+      - name: Download Debian package
+        uses: actions/download-artifact@v1
+        with:
+          name: deb-package
+
+      - name: Upload macOS Release Asset
+        id: upload-mac-release-asset 
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: macos-package/subapixplr.zip
+
+      - name: Upload Windows Release Asset
+        id: upload-win-release-asset 
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: win-package/SubAPIxplr.msi
+
+      - name: Upload Debian Release Asset
+        id: upload-deb-release-asset 
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: deb-package/substrate_api_explorer_*.deb

@@ -1,5 +1,5 @@
 [package]
-name = "substrate-api-explorer"
+name = "substrate_api_explorer"
 version = "0.1.0"
 authors = ["Ales Tsurko <ales.tsurko@gmail.com>"]
 edition = "2021"
