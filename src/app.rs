@@ -2,6 +2,7 @@
 use std::time::{Duration, Instant};
 
 use egui::collapsing_header::CollapsingHeader;
+use egui_demo_lib::easy_mark::easy_mark;
 use scale_info::{form::PortableForm, Variant};
 use serde::{Deserialize, Serialize};
 use subxt::metadata::types::{PalletMetadata, StorageEntryMetadata};
@@ -181,8 +182,9 @@ impl ApiExplorer {
         CollapsingHeader::new(pallet.name()).show(ui, |ui| {
             ui.set_width(ui.available_width());
 
-            for line in pallet.docs().iter() {
-                ui.label(line);
+            if !pallet.docs().is_empty() {
+                let docs = concat_docs(pallet.docs());
+                easy_mark(ui, &docs);
             }
 
             if let Some(metadata) = pallet.storage() {
@@ -208,13 +210,12 @@ impl ApiExplorer {
         );
 
         if !metadata.docs().is_empty() {
-            ui.add_space(5.0);
-            for line in metadata.docs() {
-                ui.label(egui::RichText::new(line).size(14.0));
-            }
+            ui.add_space(10.0);
+            let docs = concat_docs(metadata.docs());
+            easy_mark(ui, &docs);
         }
 
-        ui.add_space(10.0);
+        ui.add_space(15.0);
     }
 
     fn render_variants(
@@ -262,13 +263,20 @@ impl ApiExplorer {
 
         if !variant.docs.is_empty() {
             ui.add_space(10.0);
-            for line in variant.docs.iter() {
-                ui.label(egui::RichText::new(line).size(14.0));
-            }
+            let docs = concat_docs(&variant.docs);
+            easy_mark(ui, &docs);
         }
 
         ui.add_space(15.0);
     }
+}
+
+fn concat_docs(lines: &[String]) -> String {
+    lines.iter().fold(String::new(), |mut acc, line| {
+        acc.push_str(line);
+        acc.push('\n');
+        acc
+    })
 }
 
 fn err_to_string<T: std::fmt::Display>(e: T) -> String {
