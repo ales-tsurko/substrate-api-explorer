@@ -17,12 +17,12 @@ jobs:
           cargo install cargo-bundle
           cargo bundle --release
           cd target/release/bundle/osx/
-          zip -r subapixplr.zip SubAPIxplr.app
+          zip -r subapixplr_x86_64.zip SubAPIxplr.app
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
           name: macos-package
-          path: target/release/bundle/oxs/subapixplr.zip
+          path: target/release/bundle/osx/subapixplr_x86_64.zip
 
   package_win:
     name: Package Windows
@@ -50,11 +50,13 @@ jobs:
         run: |
           cargo install cargo-bundle
           cargo bundle --release
+          cd target/release/bundle/deb
+          tar -cvf substrate_api_explorer_amd64.tar *
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
           name: deb-package
-          path: target/release/bundle/deb/substrate_api_explorer_*.deb
+          path: target/release/bundle/deb/substrate_api_explorer_amd64.tar
 
   create_release:
     name: Create Release
@@ -89,7 +91,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: macos-package/subapixplr.zip
+          files: macos-package/subapixplr_x86_64.zip
 
       - name: Upload Windows Release Asset
         id: upload-win-release-asset 
@@ -105,4 +107,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: deb-package/substrate_api_explorer_*.deb
+          files: deb-package/substrate_api_explorer_amd64.tar
