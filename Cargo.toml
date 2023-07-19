@@ -5,8 +5,11 @@ authors = ["Ales Tsurko <ales.tsurko@gmail.com>"]
 edition = "2021"
 description = ""
 
+[workspace]
+members = ["bundler"]
+
 [package.metadata.bundle]
-name = "SubAPIxplr"
+name = "subAPIxplr"
 identifier = "by.alestsurko.substrate-api-explorer"
 icon = ["32x32.png", "128x128.png", "128x128@2x.png"]
 resources = ["assets"]

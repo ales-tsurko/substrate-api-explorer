@@ -85,26 +85,13 @@ jobs:
         with:
           name: deb-package
 
-      - name: Upload macOS Release Asset
-        id: upload-mac-release-asset 
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          files: macos-package/subapixplr_x86_64.zip
-
-      - name: Upload Windows Release Asset
+      - name: Upload Release Assets
         id: upload-win-release-asset 
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          files: win-package/SubAPIxplr.msi
-
-      - name: Upload Debian Release Asset
-        id: upload-deb-release-asset 
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          files: deb-package/substrate_api_explorer_amd64.tar
+          files: |
+            macos-package/subapixplr_x86_64.zip
+            win-package/SubAPIxplr.msi
+            deb-package/substrate_api_explorer_amd64.tar
