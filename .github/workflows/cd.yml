@@ -14,15 +14,15 @@ jobs:
       - uses: actions/checkout@v2
       - name: Package
         run: |
-          cargo install cargo-bundle
-          cargo bundle --release
-          cd target/release/bundle/osx/
-          zip -r subapixplr_x86_64.zip SubAPIxplr.app
+          cargo build --release
+          cargo run --release -p bundler
+          cd target/release/bundle/macos/
+          zip -r subsapixplr_universal.zip subsAPIxplr.app
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
           name: macos-package
-          path: target/release/bundle/osx/subapixplr_x86_64.zip
+          path: target/release/bundle/macos/subsapixplr_universal.zip
 
   package_win:
     name: Package Windows
@@ -32,13 +32,13 @@ jobs:
       - uses: actions/checkout@v2
       - name: Package
         run: |
-          cargo install cargo-bundle
-          cargo bundle --release
+          cargo build --release
+          cargo run --release -p bundler
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
           name: win-package
-          path: target/release/bundle/msi/SubAPIxplr.msi
+          path: target/release/bundle/win/subsAPIxplr.msi
 
   package_deb:
     name: Package Debian
@@ -48,15 +48,15 @@ jobs:
       - uses: actions/checkout@v2
       - name: Package
         run: |
-          cargo install cargo-bundle
-          cargo bundle --release
+          cargo build --release
+          cargo run --release -p bundler
           cd target/release/bundle/deb
-          tar -cvf substrate_api_explorer_amd64.tar *
+          tar -cvf substrate_api_explorer.tar *
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
           name: deb-package
-          path: target/release/bundle/deb/substrate_api_explorer_amd64.tar
+          path: target/release/bundle/deb/substrate_api_explorer.tar
 
   create_release:
     name: Create Release
