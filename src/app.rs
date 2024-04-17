@@ -1,13 +1,13 @@
-// use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use egui::collapsing_header::CollapsingHeader;
 use egui_demo_lib::easy_mark::easy_mark;
 use scale_info::{form::PortableForm, Variant};
+use scale_typegen_description::type_description;
 use serde::{Deserialize, Serialize};
-use subxt::metadata::types::{PalletMetadata, StorageEntryMetadata};
+use subxt::metadata::types::{ConstantMetadata, PalletMetadata, StorageEntryMetadata};
 use subxt::Metadata;
-use subxt::{client::OnlineClient, config::SubstrateConfig};
+use subxt::{client::OnlineClient, config::SubstrateConfig, ext::scale_value};
 use tokio::sync::mpsc::{self, error::TryRecvError, UnboundedReceiver, UnboundedSender};
 
 static APP_KEY: &str = "by.alestsurko.substrate-api-explorer";
@@ -146,7 +146,7 @@ impl ApiExplorer {
             ui.set_enabled(true);
             egui::ScrollArea::vertical().show(ui, |ui| {
                 response.pallets().for_each(|metadata| {
-                    Self::render_pallet_metadata(&metadata, ui);
+                    Self::render_pallet_metadata(&metadata, ui, response);
                 });
             });
         }
@@ -179,7 +179,7 @@ impl ApiExplorer {
         Ok(())
     }
 
-    fn render_pallet_metadata(pallet: &PalletMetadata<'_>, ui: &mut egui::Ui) {
+    fn render_pallet_metadata(pallet: &PalletMetadata<'_>, ui: &mut egui::Ui, metadata: &Metadata) {
         CollapsingHeader::new(pallet.name()).show(ui, |ui| {
             ui.set_width(ui.available_width());
 
@@ -199,6 +199,14 @@ impl ApiExplorer {
             Self::render_variants(pallet.call_variants(), "Calls", ui);
             Self::render_variants(pallet.event_variants(), "Events", ui);
             Self::render_variants(pallet.error_variants(), "Errors", ui);
+
+            if pallet.constants().len() > 0 {
+                CollapsingHeader::new("Constants").show(ui, |ui| {
+                    for constant in pallet.constants() {
+                        Self::render_constant_metadata(constant, ui, metadata);
+                    }
+                });
+            }
         });
     }
 
@@ -267,6 +275,56 @@ impl ApiExplorer {
             let docs = concat_docs(&variant.docs);
             easy_mark(ui, &docs);
         }
+
+        ui.add_space(15.0);
+    }
+
+    fn render_constant_metadata(
+        constant_metadata: &ConstantMetadata,
+        ui: &mut egui::Ui,
+        metadata: &Metadata,
+    ) {
+        let type_description = type_description(constant_metadata.ty(), metadata.types(), true)
+            .unwrap_or_else(|_| {
+                panic!(
+                    "Something went wrong to parse type of {}",
+                    constant_metadata.name()
+                )
+            });
+        let value = scale_value::scale::decode_as_type(
+            &mut constant_metadata.value(),
+            constant_metadata.ty(),
+            metadata.types(),
+        )
+        .unwrap_or_else(|_| {
+            panic!(
+                "Something went wrong to parse value by type {:?} of {}",
+                type_description,
+                constant_metadata.name()
+            )
+        });
+        let value = scale_typegen_description::format_type_description(&value.to_string());
+
+        ui.label(
+            egui::RichText::new(constant_metadata.name())
+                .code()
+                .color(egui::Color32::DARK_RED)
+                .size(16.0),
+        );
+
+        if !constant_metadata.docs().is_empty() {
+            ui.add_space(10.0);
+            let docs = concat_docs(constant_metadata.docs());
+            easy_mark(ui, &docs);
+            ui.add_space(10.0);
+        }
+
+        ui.label(
+            egui::RichText::new(format!("Value: {}\nType: {}", value, type_description))
+                .code()
+                .color(egui::Color32::DARK_BLUE)
+                .size(13.0),
+        );
 
         ui.add_space(15.0);
     }
