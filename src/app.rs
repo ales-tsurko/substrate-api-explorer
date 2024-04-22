@@ -275,25 +275,29 @@ impl ApiExplorer {
         ui: &mut egui::Ui,
         metadata: &Metadata,
     ) {
-        let mut type_description = type_description(constant_metadata.ty(), metadata.types(), true)
-            .unwrap_or_else(|_| {
-                panic!(
-                    "Something went wrong to parse type of {}",
-                    constant_metadata.name()
-                )
-            });
-        let value = scale_value::scale::decode_as_type(
+        let mut type_description =
+            match type_description(constant_metadata.ty(), metadata.types(), true) {
+                Ok(v) => v,
+                Err(e) => {
+                    ui.colored_label(
+                        egui::Color32::RED,
+                        format!("Error parsing type definition:\n{}", e),
+                    );
+                    return;
+                }
+            };
+        let value = match scale_value::scale::decode_as_type(
             &mut constant_metadata.value(),
             constant_metadata.ty(),
             metadata.types(),
-        )
-        .unwrap_or_else(|_| {
-            panic!(
-                "Something went wrong to parse value by type {:?} of {}",
-                type_description,
-                constant_metadata.name()
-            )
-        });
+        ) {
+            Ok(v) => v,
+            Err(e) => {
+                ui.colored_label(egui::Color32::RED, format!("Error parsing value:\n{}", e));
+                return;
+            }
+        };
+
         let mut value = scale_typegen_description::format_type_description(&value.to_string());
 
         ui.label(
@@ -316,7 +320,7 @@ impl ApiExplorer {
                 ui.add(
                     egui::TextEdit::multiline(&mut value)
                         .code_editor()
-                        .desired_width(f32::INFINITY)
+                        .desired_width(f32::INFINITY),
                 );
             });
 
@@ -326,7 +330,7 @@ impl ApiExplorer {
                 ui.add(
                     egui::TextEdit::multiline(&mut type_description)
                         .code_editor()
-                        .desired_width(f32::INFINITY)
+                        .desired_width(f32::INFINITY),
                 );
             });
 
