@@ -1,13 +1,13 @@
-// use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use egui::collapsing_header::CollapsingHeader;
 use egui_demo_lib::easy_mark::easy_mark;
 use scale_info::{form::PortableForm, Variant};
+use scale_typegen_description::type_description;
 use serde::{Deserialize, Serialize};
-use subxt::metadata::types::{PalletMetadata, StorageEntryMetadata};
+use subxt::metadata::types::{ConstantMetadata, PalletMetadata, StorageEntryMetadata};
 use subxt::Metadata;
-use subxt::{client::OnlineClient, config::SubstrateConfig};
+use subxt::{client::OnlineClient, config::SubstrateConfig, ext::scale_value};
 use tokio::sync::mpsc::{self, error::TryRecvError, UnboundedReceiver, UnboundedSender};
 
 static APP_KEY: &str = "by.alestsurko.substrate-api-explorer";
@@ -79,16 +79,6 @@ impl ApiExplorer {
         Default::default()
     }
 
-    pub fn native_options() -> eframe::NativeOptions {
-        let window_size = (600.0, 600.0);
-        eframe::NativeOptions {
-            resizable: false,
-            min_window_size: Some(window_size.into()),
-            max_window_size: Some(window_size.into()),
-            ..Default::default()
-        }
-    }
-
     fn check_timeout_disable(&mut self, ui: &mut egui::Ui) {
         if self.timeout.passed() {
             ui.set_enabled(true);
@@ -104,6 +94,8 @@ impl ApiExplorer {
     fn render_request(&mut self, ui: &mut egui::Ui) {
         let mut is_valid = url::Url::parse(&self.url).is_ok();
 
+        ui.ctx().set_zoom_factor(1.1);
+        ui.set_min_width(600.0);
         ui.horizontal_centered(|ui| {
             let button = egui::Button::new("⟳");
 
@@ -146,7 +138,7 @@ impl ApiExplorer {
             ui.set_enabled(true);
             egui::ScrollArea::vertical().show(ui, |ui| {
                 response.pallets().for_each(|metadata| {
-                    Self::render_pallet_metadata(&metadata, ui);
+                    Self::render_pallet_metadata(&metadata, ui, response);
                 });
             });
         }
@@ -179,10 +171,9 @@ impl ApiExplorer {
         Ok(())
     }
 
-    fn render_pallet_metadata(pallet: &PalletMetadata<'_>, ui: &mut egui::Ui) {
+    fn render_pallet_metadata(pallet: &PalletMetadata<'_>, ui: &mut egui::Ui, metadata: &Metadata) {
+        ui.set_width(ui.available_width());
         CollapsingHeader::new(pallet.name()).show(ui, |ui| {
-            ui.set_width(ui.available_width());
-
             if !pallet.docs().is_empty() {
                 let docs = concat_docs(pallet.docs());
                 easy_mark(ui, &docs);
@@ -199,6 +190,14 @@ impl ApiExplorer {
             Self::render_variants(pallet.call_variants(), "Calls", ui);
             Self::render_variants(pallet.event_variants(), "Events", ui);
             Self::render_variants(pallet.error_variants(), "Errors", ui);
+
+            if pallet.constants().len() > 0 {
+                CollapsingHeader::new("Constants").show(ui, |ui| {
+                    for constant in pallet.constants() {
+                        Self::render_constant_metadata(constant, ui, metadata);
+                    }
+                });
+            }
         });
     }
 
@@ -267,6 +266,73 @@ impl ApiExplorer {
             let docs = concat_docs(&variant.docs);
             easy_mark(ui, &docs);
         }
+
+        ui.add_space(15.0);
+    }
+
+    fn render_constant_metadata(
+        constant_metadata: &ConstantMetadata,
+        ui: &mut egui::Ui,
+        metadata: &Metadata,
+    ) {
+        let mut type_description =
+            match type_description(constant_metadata.ty(), metadata.types(), true) {
+                Ok(v) => v,
+                Err(e) => {
+                    ui.colored_label(
+                        egui::Color32::RED,
+                        format!("Error parsing type definition:\n{}", e),
+                    );
+                    return;
+                }
+            };
+        let value = match scale_value::scale::decode_as_type(
+            &mut constant_metadata.value(),
+            constant_metadata.ty(),
+            metadata.types(),
+        ) {
+            Ok(v) => v,
+            Err(e) => {
+                ui.colored_label(egui::Color32::RED, format!("Error parsing value:\n{}", e));
+                return;
+            }
+        };
+
+        let mut value = scale_typegen_description::format_type_description(&value.to_string());
+
+        ui.label(
+            egui::RichText::new(constant_metadata.name())
+                .code()
+                .color(egui::Color32::GREEN)
+                .size(16.0),
+        );
+
+        if !constant_metadata.docs().is_empty() {
+            ui.add_space(10.0);
+            let docs = concat_docs(constant_metadata.docs());
+            easy_mark(ui, &docs);
+            ui.add_space(10.0);
+        }
+
+        CollapsingHeader::new("Value")
+            .id_source(format!("{}value", constant_metadata.name()))
+            .show(ui, |ui| {
+                ui.add(
+                    egui::TextEdit::multiline(&mut value)
+                        .code_editor()
+                        .desired_width(f32::INFINITY),
+                );
+            });
+
+        CollapsingHeader::new("Type Definition")
+            .id_source(format!("{}td", constant_metadata.name()))
+            .show(ui, |ui| {
+                ui.add(
+                    egui::TextEdit::multiline(&mut type_description)
+                        .code_editor()
+                        .desired_width(f32::INFINITY),
+                );
+            });
 
         ui.add_space(15.0);
     }

@@ -9,7 +9,7 @@ async fn main() -> eframe::Result<()> {
 
     eframe::run_native(
         "substrate api explorer",
-        substrate_api_explorer::ApiExplorer::native_options(),
+        Default::default(),
         Box::new(|cc| Box::new(substrate_api_explorer::ApiExplorer::new(cc))),
     )
 }
