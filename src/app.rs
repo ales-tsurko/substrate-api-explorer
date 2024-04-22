@@ -79,16 +79,6 @@ impl ApiExplorer {
         Default::default()
     }
 
-    pub fn native_options() -> eframe::NativeOptions {
-        let window_size = (600.0, 600.0);
-        eframe::NativeOptions {
-            resizable: false,
-            min_window_size: Some(window_size.into()),
-            max_window_size: Some(window_size.into()),
-            ..Default::default()
-        }
-    }
-
     fn check_timeout_disable(&mut self, ui: &mut egui::Ui) {
         if self.timeout.passed() {
             ui.set_enabled(true);
@@ -104,6 +94,8 @@ impl ApiExplorer {
     fn render_request(&mut self, ui: &mut egui::Ui) {
         let mut is_valid = url::Url::parse(&self.url).is_ok();
 
+        ui.ctx().set_zoom_factor(1.1);
+        ui.set_min_width(600.0);
         ui.horizontal_centered(|ui| {
             let button = egui::Button::new("⟳");
 
@@ -180,9 +172,8 @@ impl ApiExplorer {
     }
 
     fn render_pallet_metadata(pallet: &PalletMetadata<'_>, ui: &mut egui::Ui, metadata: &Metadata) {
+        ui.set_width(ui.available_width());
         CollapsingHeader::new(pallet.name()).show(ui, |ui| {
-            ui.set_width(ui.available_width());
-
             if !pallet.docs().is_empty() {
                 let docs = concat_docs(pallet.docs());
                 easy_mark(ui, &docs);
@@ -284,7 +275,7 @@ impl ApiExplorer {
         ui: &mut egui::Ui,
         metadata: &Metadata,
     ) {
-        let type_description = type_description(constant_metadata.ty(), metadata.types(), true)
+        let mut type_description = type_description(constant_metadata.ty(), metadata.types(), true)
             .unwrap_or_else(|_| {
                 panic!(
                     "Something went wrong to parse type of {}",
@@ -303,12 +294,12 @@ impl ApiExplorer {
                 constant_metadata.name()
             )
         });
-        let value = scale_typegen_description::format_type_description(&value.to_string());
+        let mut value = scale_typegen_description::format_type_description(&value.to_string());
 
         ui.label(
             egui::RichText::new(constant_metadata.name())
                 .code()
-                .color(egui::Color32::DARK_RED)
+                .color(egui::Color32::GREEN)
                 .size(16.0),
         );
 
@@ -319,12 +310,25 @@ impl ApiExplorer {
             ui.add_space(10.0);
         }
 
-        ui.label(
-            egui::RichText::new(format!("Value: {}\nType: {}", value, type_description))
-                .code()
-                .color(egui::Color32::DARK_BLUE)
-                .size(13.0),
-        );
+        CollapsingHeader::new("Value")
+            .id_source(format!("{}value", constant_metadata.name()))
+            .show(ui, |ui| {
+                ui.add(
+                    egui::TextEdit::multiline(&mut value)
+                        .code_editor()
+                        .desired_width(f32::INFINITY)
+                );
+            });
+
+        CollapsingHeader::new("Type Definition")
+            .id_source(format!("{}td", constant_metadata.name()))
+            .show(ui, |ui| {
+                ui.add(
+                    egui::TextEdit::multiline(&mut type_description)
+                        .code_editor()
+                        .desired_width(f32::INFINITY)
+                );
+            });
 
         ui.add_space(15.0);
     }
