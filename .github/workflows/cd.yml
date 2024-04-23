@@ -14,51 +14,53 @@ jobs:
     runs-on: macos-latest
         
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Package
         run: |
           cargo build --release
           cargo run --release -p bundler
           cd target/release/bundle/macos/
-          zip -r subsapixplr_universal.zip subsAPIxplr.app
+          zip -r substrate_api_explorer_macos_universal.zip subsAPIxplr.app
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
           name: macos-package
-          path: target/release/bundle/macos/subsapixplr_universal.zip
+          path: target/release/bundle/macos/substrate_api_explorer_macos_universal.zip
 
   package_win:
     name: Package Windows
     runs-on: windows-latest
         
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Package
         run: |
           cargo build --release
+          cd target/release/
+          mv substrate_api_explorer.exe substrate_api_explorer_win.exe
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
           name: win-package
-          path: target/release/substrate_api_explorer.exe
+          path: target/release/substrate_api_explorer_win.exe
 
   package_deb:
     name: Package Debian
     runs-on: ubuntu-latest
         
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Package
         run: |
           cargo build --release
           cargo run --release -p bundler
           cd target/release/bundle/deb
-          tar -cvf substrate_api_explorer.tar *
+          tar -cvf substrate_api_explorer_debian.tar *
       - name: Upload artifacts
         uses: actions/upload-artifact@v1
         with:
           name: deb-package
-          path: target/release/bundle/deb/substrate_api_explorer.tar
+          path: target/release/bundle/deb/substrate_api_explorer_debian.tar
 
   create_release:
     name: Create Release
@@ -94,6 +96,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
-            macos-package/subsapixplr_universal.zip
-            win-package/substrate_api_explorer.exe
-            deb-package/substrate_api_explorer.tar
+            macos-package/substrate_api_explorer_macos_universal.zip
+            win-package/substrate_api_explorer_win.exe
+            deb-package/substrate_api_explorer_debian.tar
